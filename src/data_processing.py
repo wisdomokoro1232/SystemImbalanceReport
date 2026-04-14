@@ -1,5 +1,10 @@
-import pandas as pd
+from __future__ import annotations
+
+from pathlib import Path
 from datetime import datetime, timedelta
+from typing import Tuple
+
+import pandas as pd
 
 
 class DataProcessor:
@@ -7,20 +12,37 @@ class DataProcessor:
         self.api_client = api_client
 
     @staticmethod
-    def _settlement_period_to_datetime(period: int, settlement_date: str) -> str:
+    def _settlement_period_to_datetime(period: int, settlement_date: str) -> datetime:
         """Map period 1-48 to datetimes from previous day 23:00 to settlement day 22:30."""
         base_date = datetime.strptime(settlement_date, "%Y-%m-%d")
         start_dt = (base_date - timedelta(days=1)).replace(hour=23, minute=0, second=0, microsecond=0)
-        period_dt = start_dt + timedelta(minutes=(period - 1) * 30)
-        return period_dt.strftime("%Y-%m-%d %H:%M")
+        return start_dt + timedelta(minutes=(period - 1) * 30)
 
-    def process_data(self, output_format=None, settlement_date=None, additional_columns=None):
+    def process_data(
+        self,
+        output_format=None,
+        settlement_date=None,
+        additional_columns=None,
+        output_dir: str | Path | None = None,
+    ) -> Tuple[pd.DataFrame, str]:
+        """Fetch, clean, and align raw API data into a half-hourly time series.
+
+        Returns
+        -------
+        (df, csv_path) : tuple[pd.DataFrame, str]
+            The cleaned DataFrame (with a DatetimeIndex named 'settlementPeriod')
+            and the path to the exported CSV file.
+        """
         settlement_date_str = settlement_date if settlement_date else self.api_client.get_settlement_date()
         response = self.api_client.fetch_indicative_imbalance_settlement(
             format=output_format,
             settlement_date=settlement_date_str,
         )
         data = response.json()['data']
+        if not data:
+            raise ValueError(
+                f"Empty API response: no records returned for settlement date {settlement_date_str}."
+            )
         df = pd.DataFrame(data)
 
         # Filter columns
@@ -29,7 +51,7 @@ class DataProcessor:
             columns_to_keep.extend(additional_columns)
         df = df[columns_to_keep]
 
-        # Add missing data indicator which checks whether any of the key columns have missing data and sets the flag to True if so, otherwise False
+        # Add missing data indicator
         df['missingData'] = df.isnull().any(axis=1)
 
         # Convert data types
@@ -38,10 +60,10 @@ class DataProcessor:
         df['systemBuyPrice'] = df['systemBuyPrice'].astype(float)
         df['netImbalanceVolume'] = df['netImbalanceVolume'].astype(float)
 
-        # Check for duplicates and remove them
+        # Remove duplicates
         df.drop_duplicates(inplace=True)
 
-        # Check for missing periods and set them to 0 with missing flag
+        # Inject missing periods as zero with missing flag
         all_periods = set(range(1, 49))
         existing_periods = set(df['settlementPeriod'])
         missing_periods = all_periods - existing_periods
@@ -62,11 +84,19 @@ class DataProcessor:
             df = pd.concat([df, missing_rows], ignore_index=True)
 
         df = df.sort_values('settlementPeriod').reset_index(drop=True)
+
+        # Convert integer periods to proper datetime objects
         df['settlementPeriod'] = df['settlementPeriod'].astype(int).apply(
             lambda period: self._settlement_period_to_datetime(period, settlement_date_str)
         )
+        df['settlementPeriod'] = pd.to_datetime(df['settlementPeriod'])
+        df = df.set_index('settlementPeriod')
 
-        # Save to CSV
-        filename = f"indicative_imbalance_settlement_{settlement_date_str}.csv"
-        df.to_csv(filename, index=False)
-        return filename
+        # Export CSV
+        if output_dir is None:
+            output_dir = Path(__file__).parent / "output"
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        csv_file = output_path / f"indicative_imbalance_settlement_{settlement_date_str}.csv"
+        df.to_csv(csv_file)
+        return df, str(csv_file)

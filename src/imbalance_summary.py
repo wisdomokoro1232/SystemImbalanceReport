@@ -8,7 +8,8 @@ def _exclude_missing_rows(df: pd.DataFrame) -> pd.DataFrame:
     """Return rows that are not marked as missing."""
     if "missingData" not in df.columns:
         return df.copy()
-    return df.loc[~df["missingData"].fillna(False)].copy()
+    mask = df["missingData"].fillna(False).astype(bool)
+    return df[~mask].copy()
 
 
 def generate_imbalance_summary(df: pd.DataFrame) -> pd.DataFrame:
@@ -35,4 +36,26 @@ def generate_imbalance_summary(df: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(summary_rows)
 
+def build_missing_period_note_html(df: pd.DataFrame) -> str:
+    """Build an HTML note listing missing settlement periods, if any."""
+    if "missingData" not in df.columns:
+        return '<div class="missing-note">Missing period metadata was not available in input data.</div>'
+
+    missing_mask = df["missingData"].fillna(False)
+    # settlementPeriod may be a column or the index (DatetimeIndex)
+    if "settlementPeriod" in df.columns:
+        missing_periods = [str(v) for v in df.loc[missing_mask, "settlementPeriod"].tolist()]
+    else:
+        missing_periods = [str(v) for v in df.index[missing_mask].tolist()]
+
+    if not missing_periods:
+        return '<div class="missing-note">No missing settlement periods were detected.</div>'
+
+    safe_periods = ", ".join(html.escape(period) for period in missing_periods)
+    return (
+        '<div class="missing-note missing-note-warning">'
+        'Missing settlement periods were imputed as zero for reporting and are highlighted in light red on charts: '
+        f'{safe_periods}.'
+        '</div>'
+    )
 

@@ -78,15 +78,20 @@ Since November 2015 (modification P305), the UK has used a single imbalance pric
      - **Daily imbalance unit rate** (clearly define; e.g. cost / absolute volume, or another sensible definition)
    - Generate **at least one visualisation** that would enhance a trader’s post-trade analysis (justify briefly why you chose it).
 
-What is Volume Imbalance?
+### What is Volume Imbalance?
 Volume imbalance refers to a situation where there is a significant difference between the buying and selling volumes in the market. In other words, it measures the disparity between demand (buyers) and supply (sellers). This imbalance can indicate potential market moves, as a higher buying volume could signal bullish sentiment, while a higher selling volume might indicate bearish sentiment.
 
 
-Net Imbalance Volume (NIV): The net volume of energy actions (bids and offers) taken by the System Operator to balance the system in a given settlement period (usually 30 minutes).
-Short System: NIV is positive (demand > generation).
-Long System: NIV is negative (generation > demand)
+### Net Imbalance Volume (NIV): 
+The net volume of energy actions (bids and offers) taken by the System Operator to balance the system in a given settlement period (usually 30 minutes).
 
-Traders want to see the sign of the settlement operiod because this can signal when was best to buy (Long system) vs sell (short system)?
+#### Short System: NIV is positive (demand > generation).
+Prices are based onputting more energy onto grid or reducing demand (How would the demand side occur?, guessing traders dont play a part in teh demand side reduction, unless its more undistrial consumers who are moire flecible with power usage e.g. ammonia production or factories with easily adjust output levels?)
+Prices typically higher (Price imbalance goes up)
+#### Long System: NIV is negative (generation > demand)
+Prices are based on putting more energy onto grid or increasing demand ( )
+Prices typically higher (Price imbalance goes up)
+Traders want to see the sign of the settlement operiod because this can signal when was best to sell (Long system) vs buy (short system)?
 
 What is Price Imbalance?
 
@@ -94,19 +99,32 @@ Price imbalance, on the other hand, occurs when there is a disparity between the
 
 Why would we monitor these post trade?
 
-Evaluating Execution Quality : Post-trade analysis helps traders determine if they paid too much for a trade due to liquidity voids. By reviewing if a trade was executed during an extreme imbalance, they can assess if the market maker or algorithm provided the best possible price, or if the trade suffered from high implementation shortfall.
+### Evaluating Execution Quality : 
+Post-trade analysis helps traders determine if they paid too much for a trade due to liquidity voids. By reviewing if a trade was executed during an extreme imbalance, they can assess if the market maker or algorithm provided the best possible price, or if the trade suffered from high implementation shortfall.
 
-Understanding Market Sentiment and Direction: Imbalances are interpreted as a signal of aggressive buying or selling activity. Post-trade analysis allows traders to confirm if the imbalance was a real shift in market sentiment or just "noise" (a false breakout), which helps in predicting future price direction.
+### Understanding Market Sentiment and Direction: 
+Imbalances are interpreted as a signal of aggressive buying or selling activity. Post-trade analysis allows traders to confirm if the imbalance was a real shift in market sentiment or just "noise" (a false breakout), which helps in predicting future price direction.
 
-Identifying Future Support and Resistance Levels: Areas of significant imbalance often represent "thin" liquidity where price can move rapidly. By marking these areas, traders can identify high-probability zones where the market is likely to return in the future to "fill" the imbalance (i.e., return to equilibrium).
+### Identifying Future Support and Resistance Levels: 
+Areas of significant imbalance often represent "thin" liquidity where price can move rapidly. By marking these areas, traders can identify high-probability zones where the market is likely to return in the future to "fill" the imbalance (i.e., return to equilibrium).
 
-Refining Trading Strategies and Habits: Post-trade review (such as "Walk-A-Away" analysis) helps traders see if they are entering or exiting positions prematurely due to panic or in response to temporary imbalance, allowing them to improve their discipline and profitability.
+### Refining Trading Strategies and Habits: 
+Post-trade review (such as "Walk-A-Away" analysis) helps traders see if they are entering or exiting positions prematurely due to panic or in response to temporary imbalance, allowing them to improve their discipline and profitability.
 
-Managing Institutional Risk: Large institutional traders analyze imbalances to see how their meta-orders (large, split-up orders) have influenced the market, helping them understand if their own activity created temporary price volatility
+### Managing Institutional Risk:
+ Large institutional traders analyze imbalances to see how their meta-orders (large, split-up orders) have influenced the market, helping them understand if their own activity created temporary price volatility
 
-Visualise: 1. Show when it is a long system and by how much 2. Show the prices during these periods - maybe better to voerlay these two together? 
+### Visualise: 1. Show when it is a long system and by how much 2. Show the prices during these periods - maybe better to overlay these two together? 
 
-As a result visualisation definitely should not estimate imbalance volumes or prices where missing as this can lead to wrong conclusions, aslo due to teh volatility of these values it is unreliable to use the last known value or an average
+As a result visualisation definitely should not estimate imbalance volumes or prices where missing as this can lead to wrong conclusions, also due to the volatility of these values it is unreliable to use the last known value or an average
+
+Output report but generate HTML as this is more easily testable
+PDF as the final deliverable.
+HTML kept as the source.
+
+Easier debugging when layout or styling looks wrong in the PDF.
+Faster iteration for future changes.
+Better traceability in tests and QA.
 
 4. **Developer best practices**
    - Include a small suite of **unit tests** to protect the codebase from accidental modification and regressions.
