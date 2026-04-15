@@ -133,7 +133,7 @@ SystemImbalanceReport/
     ├── imbalance_report.py        # Main entrypoint — orchestrates the pipeline
     ├── main/
     │   └── report_template.html   # HTML template with CSS variables
-    ├── output/                    # Generated reports (git-ignored)
+    ├── output/                    # Generated reports 
     └── tests/
         ├── conftest.py
         └── test_unit.py
@@ -144,8 +144,8 @@ SystemImbalanceReport/
 ## Key assumptions and trade-offs
 
 - **Single imbalance price**: Since P305 (Nov 2015), `systemBuyPrice == systemSellPrice`. The report uses `systemSellPrice` as the single price, with `systemBuyPrice` retained in the data for completeness.
-- **Missing periods**: Any of the 48 half-hourly periods absent from the API response are injected as zero-value rows with a `missingData` flag. These are excluded from metric calculations and visually flagged on the chart, because estimating volatile imbalance values would mislead traders.
-- **Settlement period timing**: Period 1 maps to T-1 23:00 and Period 48 maps to T 22:30, following the GB electricity settlement day convention.
+- **Missing periods**: Any of the 48 half-hourly periods absent from the API response are injected as zero-value rows with a `missingData` flag. These are excluded from metric calculations and visually flagged on the chart, because estimating volatile imbalance values is assumed to mislead traders.
+- **Settlement period timing**: Period 1 maps to T-1 23:00 and Period 48 maps to T 22:30, following the GB electricity settlement day convention. If changed these would need to be modified.
 - **PDF rendering**: Uses Playwright (Chromium) rather than `xhtml2pdf` for full CSS fidelity (CSS variables, grid layout, modern styling).
 - **Purpose of Total Imbalance Cost**: To identify the cost of balancing the system irrespective of direction - can signal whether some days experienced more volatility/unexpected pressures on demand and supply side. Can help refine trading strategy for next day where total imbalance costs were high.
 - **Purpose of Daily Imbalance Unit rate**: Average cost of balancing actions shows traders the average price paid in/out per unit of energy. This can help traders in quantifying risk for future contracting based on the amount their assets could be imbalancing the system by. 
@@ -159,4 +159,8 @@ SystemImbalanceReport/
 - **Multiple settlement days**: `process_data()` and `build_imbalance_report()` accept a `settlement_date` parameter — batch runs can loop over a date range.
 - **Additional metrics**: New metrics can be added to `generate_imbalance_summary()` by appending rows to the summary DataFrame. The HTML template and tests will pick them up automatically.
 - **Scheduling**: The CLI entrypoint (`imbalance_report.py`) can be wrapped in a cron job or Windows Task Scheduler for automated daily generation.
+- **Custom metrics and alerts**: Add threshold-based alerts (e.g., email notifications if total cost exceeds a limit) or custom KPIs like peak imbalance hours. This feature would integrate well with a scheduled job.
 - **Integration Tests**: Due to lack of understanding of the integration tests framework in python they were not implemented but they are essential for any production ready project.
+- **Data persistence**: Store historical reports in a database (e.g., SQLite or PostgreSQL) for trend analysis and comparison across days.
+- **Performance optimization**: Add caching for API responses and parallel processing for large date ranges.
+- **API endpoints**: Expose the report generation as a REST API using Flask/FastAPI, allowing web-based triggering and JSON responses.
