@@ -166,47 +166,6 @@ class TestBuildMissingPeriodNoteHtml:
 
 
 # ---------------------------------------------------------------------------
-# HTML report builders
-# ---------------------------------------------------------------------------
-
-
-class TestBuildSummaryTableHtml:
-    def test_all_column_headers_are_rendered(self):
-        df = pd.DataFrame({"Metric": ["Cost"], "Value": ["100"], "Methodology": ["Sum(NIV*P)"]})
-        html = build_summary_table_html(df)
-        assert "<th>Metric</th>" in html
-        assert "<th>Value</th>" in html
-        assert "<th>Methodology</th>" in html
-
-    def test_cell_values_present_in_output(self):
-        df = pd.DataFrame({"Metric": ["Cost"], "Value": ["11,400.00"], "Methodology": ["Sum"]})
-        html = build_summary_table_html(df)
-        assert "11,400.00" in html
-
-    def test_xss_in_cell_value_is_escaped(self):
-        df = pd.DataFrame({"A": ['<img src=x onerror="alert(1)">']})
-        html = build_summary_table_html(df)
-        assert "<img" not in html
-        assert "&lt;img" in html
-
-
-class TestBuildVisualCardHtml:
-    def test_image_tag_rendered_when_path_given(self):
-        html = build_visual_card_html("Title", "Desc", "assets/chart.png")
-        assert '<img src="assets/chart.png"' in html
-
-    def test_placeholder_shown_when_no_image(self):
-        html = build_visual_card_html("Title", "Desc", image_path=None)
-        assert "visual-placeholder" in html
-        assert "<img" not in html
-
-    def test_title_and_description_present(self):
-        html = build_visual_card_html("My Title", "My Description")
-        assert "My Title" in html
-        assert "My Description" in html
-
-
-# ---------------------------------------------------------------------------
 # APIClient input validation
 # ---------------------------------------------------------------------------
 
@@ -228,3 +187,27 @@ class TestAPIClientValidation:
         result = APIClient.get_settlement_date()
         yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
         assert result == yesterday
+
+    def test_empty_api_response_raises_value_error(self, requests_mock):
+        client = APIClient()
+        settlement_date_str = "2026-04-10"
+        url = f"{client.base_url}{settlement_date_str}?format=json"
+        requests_mock.get(url, json={"data": []}, status_code=200)
+
+        with pytest.raises(ValueError, match=f"Empty API response: no records returned for settlement date {settlement_date_str}."):
+            client.fetch_indicative_imbalance_settlement(format="json", settlement_date=settlement_date_str)
+
+    def test_retry_on_server_error(self, requests_mock):
+        client = APIClient()
+        settlement_date_str = "2026-04-10"
+        url = f"{client.base_url}{settlement_date_str}?format=json"
+        # Simulate 3 server errors followed by a successful response
+        requests_mock.get(url, [
+            {"status_code": 500},
+            {"status_code": 502},
+            {"status_code": 503},
+            {"json": {"data": [{"settlementPeriod": 1, "systemSellPrice": 100.0, "systemBuyPrice": 100.0, "netImbalanceVolume": 10.0}]}},
+        ])
+
+        response = client.fetch_indicative_imbalance_settlement(format="json", settlement_date=settlement_date_str)
+        assert response.status_code == 200

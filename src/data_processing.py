@@ -40,10 +40,6 @@ class DataProcessor:
             settlement_date=settlement_date_str,
         )
         data = response.json()['data']
-        if not data:
-            raise ValueError(
-                f"Empty API response: no records returned for settlement date {settlement_date_str}."
-            )
         df = pd.DataFrame(data)
 
         # Filter columns

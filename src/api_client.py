@@ -46,8 +46,14 @@ class APIClient:
         try:
             response = self.session.get(f"{self.base_url}{settlement_date}?format={format}", timeout=10)
             response.raise_for_status()  # Raise an error for HTTP errors
-            logger.info(f"Successfully fetched data for settlement date: {settlement_date} with format: {format}")
-            return response
+            data = response.json()['data']
+            if not data:
+                raise ValueError(
+                f"Empty API response: no records returned for settlement date {settlement_date_str}."
+                )
+            else:
+                logger.info(f"Successfully fetched data for settlement date: {settlement_date} with format: {format}")
+                return response
         except requests.RequestException as e:
             logger.error(f"Error fetching data for settlement date: {settlement_date} with format: {format} - {e}")
             raise SystemExit(e)
