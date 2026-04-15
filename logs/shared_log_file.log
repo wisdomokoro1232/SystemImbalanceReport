@@ -1,0 +1,8 @@
+2026-04-15 19:50:49,791 - shared_logger - INFO - Starting imbalance report generation for settlement date: latest available
+2026-04-15 19:50:49,791 - shared_logger - INFO - APIClient initialized with base URL: https://data.elexon.co.uk/bmrs/api/v1/balancing/settlement/system-prices/
+2026-04-15 19:50:49,792 - shared_logger - INFO - Output directory created at: C:\Users\wwo20\OneDrive - Imperial College London\Documents\SmartestEnergy\BMRS\src\output
+2026-04-15 19:50:50,163 - shared_logger - INFO - Successfully fetched data for settlement date: 2026-04-14 with format: json
+2026-04-15 19:50:50,211 - shared_logger - INFO - Processed data for settlement date 2026-04-14 and exported to C:\Users\wwo20\OneDrive - Imperial College London\Documents\SmartestEnergy\BMRS\src\output\indicative_imbalance_settlement_2026-04-14.csv
+2026-04-15 19:50:50,813 - shared_logger - INFO - Generated HTML report at: C:\Users\wwo20\OneDrive - Imperial College London\Documents\SmartestEnergy\BMRS\src\output\imbalance_report_2026-04-14.html
+2026-04-15 19:50:53,162 - shared_logger - INFO - Exported report to PDF: C:\Users\wwo20\OneDrive - Imperial College London\Documents\SmartestEnergy\BMRS\src\output\imbalance_report_2026-04-14.pdf
+2026-04-15 19:50:53,545 - shared_logger - INFO - Report generation completed. HTML: C:\Users\wwo20\OneDrive - Imperial College London\Documents\SmartestEnergy\BMRS\src\output\imbalance_report_2026-04-14.html | PDF: C:\Users\wwo20\OneDrive - Imperial College London\Documents\SmartestEnergy\BMRS\src\output\imbalance_report_2026-04-14.pdf

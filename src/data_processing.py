@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Tuple
-
+from logging_config import logger 
 import pandas as pd
 
 
@@ -16,6 +16,7 @@ class DataProcessor:
         """Map period 1-48 to datetimes from previous day 23:00 to settlement day 22:30."""
         base_date = datetime.strptime(settlement_date, "%Y-%m-%d")
         start_dt = (base_date - timedelta(days=1)).replace(hour=23, minute=0, second=0, microsecond=0)
+        logger.debug(f"Mapping settlement period {period} to datetime starting from {start_dt}")
         return start_dt + timedelta(minutes=(period - 1) * 30)
 
     def process_data(
@@ -53,6 +54,7 @@ class DataProcessor:
 
         # Add missing data indicator
         df['missingData'] = df.isnull().any(axis=1)
+        logger.debug(f"Added missing data indicator. Missing data rows: {df['missingData'].sum()}")
 
         # Convert data types
         df['settlementPeriod'] = df['settlementPeriod'].astype(int)
@@ -82,7 +84,7 @@ class DataProcessor:
                 ]
             )
             df = pd.concat([df, missing_rows], ignore_index=True)
-
+            logger.debug(f"Injected missing periods as zero with missing flag. Missing periods: {sorted(missing_periods)}")
         df = df.sort_values('settlementPeriod').reset_index(drop=True)
 
         # Convert integer periods to proper datetime objects
@@ -99,4 +101,5 @@ class DataProcessor:
         output_path.mkdir(parents=True, exist_ok=True)
         csv_file = output_path / f"indicative_imbalance_settlement_{settlement_date_str}.csv"
         df.to_csv(csv_file)
+        logger.info(f"Processed data for settlement date {settlement_date_str} and exported to {csv_file}")
         return df, str(csv_file)

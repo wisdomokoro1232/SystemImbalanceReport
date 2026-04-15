@@ -15,17 +15,22 @@ from api_client import APIClient
 from data_processing import DataProcessor
 from generate_report import export_report_pdf, generate_report
 from imbalance_visualisation import ImbalanceVisualisation
+from logging_config import logger 
 
 
 def build_imbalance_report(settlement_date: str | None = None, open_browser: bool = True) -> str:
     """Fetch, process, visualise, and render the HTML report, then export to PDF."""
+    logger.info(f"Starting imbalance report generation for settlement date: {settlement_date or 'latest available'}")
     api_client = APIClient()
     data_processor = DataProcessor(api_client)
+    logger.debug("Initialized API client and data processor.")
     report_for_date = settlement_date or api_client.get_settlement_date()
 
     report_dir = Path(__file__).parent
     output_dir = report_dir / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
+    
+    logger.info(f"Output directory created at: {output_dir}")
 
     # DataFrame is returned directly.
     # CSV is exported for persistence.
@@ -46,6 +51,8 @@ def build_imbalance_report(settlement_date: str | None = None, open_browser: boo
     )
     visualisations = visualiser.generate_visualisations(limit=1)
 
+    logger.debug(f"Generated visualisations: {list(visualisations[0].keys()) if visualisations else 'None'}")
+
     report_path = generate_report(
         df=df,
         visualisations=visualisations,
@@ -56,6 +63,8 @@ def build_imbalance_report(settlement_date: str | None = None, open_browser: boo
 
     if open_browser:
         webbrowser.open(Path(report_path).resolve().as_uri())
+
+    logger.info(f"Report generation completed. HTML: {report_path} | PDF: {pdf_path}")
 
     return f"HTML: {report_path} | PDF: {pdf_path}"
 

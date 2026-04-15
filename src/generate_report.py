@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from logging_config import logger 
+from playwright.sync_api import sync_playwright
 import html
 
 import pandas as pd
@@ -87,6 +89,7 @@ def render_report_html(
         output_path = script_dir / output_file
 
     output_path.write_text(rendered, encoding="utf-8")
+    logger.info(f"Generated HTML report at: {output_path}")
     return str(output_path)
 
 
@@ -110,8 +113,6 @@ def generate_report(
 
 def export_report_pdf(html_file: str, pdf_file: str | None = None) -> str:
     """Export the generated HTML report to PDF using Playwright - ensures precise rendering and layout."""
-    from playwright.sync_api import sync_playwright
-
     html_path = Path(html_file).resolve()
     output_pdf = Path(pdf_file).resolve() if pdf_file else html_path.with_suffix(".pdf")
 
@@ -126,5 +127,5 @@ def export_report_pdf(html_file: str, pdf_file: str | None = None) -> str:
             margin={"top": "10mm", "right": "10mm", "bottom": "10mm", "left": "10mm"},
         )
         browser.close()
-
+    logger.info(f"Exported report to PDF: {output_pdf}")
     return str(output_pdf)
