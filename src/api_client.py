@@ -9,6 +9,7 @@ from logging_config import logger
 class APIClient:
     # Initialization method sets up base default url and headers for API requests
     def __init__(self, base_url=None):
+        """Initialize the API client with a base URL and set up retry strategy."""
         self.base_url = base_url or "https://data.elexon.co.uk/bmrs/api/v1/balancing/settlement/system-prices/"
         logger.info(f"APIClient initialized with base URL: {self.base_url}")
 
@@ -23,11 +24,13 @@ class APIClient:
 
     @staticmethod
     def get_settlement_date():
+        """Get yesterday's date in 'YYYY-MM-DD' format."""
         # Get yesterday's date
         settlement_date = datetime.datetime.today() - datetime.timedelta(days=1)
         return settlement_date.strftime('%Y-%m-%d')
 
     def fetch_indicative_imbalance_settlement(self, format = None, settlement_date = None):
+        """Fetch indicative imbalance settlement data for a given settlement date and format."""
         if settlement_date is None:
             settlement_date = self.get_settlement_date()  # Get yesterday's date
         else:

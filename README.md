@@ -1,4 +1,4 @@
-# BMRS Daily System Imbalance Report
+# Daily System Imbalance Report
 
 A daily report generator for system imbalance price and volume data from the [Elexon BMRS API](https://bmrs.elexon.co.uk/api-documentation), designed to support a trader's post-trade analysis.
 
@@ -16,6 +16,14 @@ From the repository root:
 ```
 
 This performs full setup once (venv + dependencies + Playwright Chromium) and then generates the daily report in one line.
+
+If you get an error similar to the following: 
+#### " .venv\Scripts\Activate.ps1 cannot be loaded  because running scripts is disabled on this system ...'
+
+Run the command below before the quick start commands:
+```
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
 
 ---
 
@@ -56,7 +64,7 @@ playwright install chromium
 
 ## Running the report
 
-From the repository root (`BMRS/`):
+From the repository root (`SystemImbalanceReport/`):
 
 ```bash
 python src/imbalance_report.py
@@ -92,18 +100,17 @@ Output files are written to `src/output/`:
 
 ## Running the tests
 
-From the repository root (`BMRS/`):
+From the repository root (`SystemImbalanceReport/`):
 
 ```bash
 python -m pytest
 ```
 
-`pytest.ini` is pre-configured so no extra flags are needed. The suite runs 57 tests in ~2 seconds with no network access required.
+`pytest.ini` is pre-configured so no extra flags are needed. The suite runs the tests in ~2 seconds with no network access required.
 
 | File | Scope | What it covers |
 |------|-------|----------------|
 | `src/tests/test_unit.py` | Unit (no I/O) | Settlement period mapping, metric calculations, HTML escaping, label logic, input validation |
-| `src/tests/test_integration.py` | Integration (mocked HTTP) | Full data pipeline, missing/duplicate period handling, report rendering, chart generation |
 | `src/tests/conftest.py` | Fixtures | Shared DataFrames, fake API responses, matplotlib backend override |
 
 ---
@@ -111,11 +118,12 @@ python -m pytest
 ## Project structure
 
 ```
-BMRS/
+SystemImbalanceReport/
 ├── README.md
 ├── pytest.ini
 ├── requirements.txt
 ├── requirements-dev.txt
+├── logs # Location for persisted logging
 └── src/
     ├── api_client.py              # Reusable Elexon BMRS API client
     ├── data_processing.py         # Fetch, clean, align half-hourly time series
@@ -128,8 +136,7 @@ BMRS/
     ├── output/                    # Generated reports (git-ignored)
     └── tests/
         ├── conftest.py
-        ├── test_unit.py
-        └── test_integration.py
+        └── test_unit.py
 ```
 
 ---
@@ -140,6 +147,9 @@ BMRS/
 - **Missing periods**: Any of the 48 half-hourly periods absent from the API response are injected as zero-value rows with a `missingData` flag. These are excluded from metric calculations and visually flagged on the chart, because estimating volatile imbalance values would mislead traders.
 - **Settlement period timing**: Period 1 maps to T-1 23:00 and Period 48 maps to T 22:30, following the GB electricity settlement day convention.
 - **PDF rendering**: Uses Playwright (Chromium) rather than `xhtml2pdf` for full CSS fidelity (CSS variables, grid layout, modern styling).
+- **Purpose of Total Imbalance Cost**: To identify the cost of balancing the system irrespective of direction - can signal whether some days experienced more volatility/unexpected pressures on demand and supply side. Can help refine trading strategy for next day where total imbalance costs were high.
+- **Purpose of Daily Imbalance Unit rate**: Average cost of balancing actions shows traders the average price paid in/out per unit of energy. This can help traders in quantifying risk for future contracting based on the amount their assets could be imbalancing the system by. 
+- **Purpose of NIV Analysis**: Understand Market Sentiment and  Direction, Identify Patterns, Refine Trade strategies amd Habits, Manage Institutional Risk and . With the first three reasons in mind the visualisation was produced to indicate both long/short systems as well as corresponding price changes. Traders can better anticipate when the grid will be "short" (shortage) or "long" (surplus) to position their assets to benefit from higher imbalance prices. It also helps with the fourth where traders can align their orders with market movements to identify correlation.
 
 ---
 
@@ -149,3 +159,4 @@ BMRS/
 - **Multiple settlement days**: `process_data()` and `build_imbalance_report()` accept a `settlement_date` parameter — batch runs can loop over a date range.
 - **Additional metrics**: New metrics can be added to `generate_imbalance_summary()` by appending rows to the summary DataFrame. The HTML template and tests will pick them up automatically.
 - **Scheduling**: The CLI entrypoint (`imbalance_report.py`) can be wrapped in a cron job or Windows Task Scheduler for automated daily generation.
+- **Integration Tests**: Due to lack of understanding of the integration tests framework in python they were not implemented but they are essential for any production ready project.

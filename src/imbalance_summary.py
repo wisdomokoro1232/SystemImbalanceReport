@@ -16,16 +16,17 @@ def generate_imbalance_summary(df: pd.DataFrame) -> pd.DataFrame:
     """Create daily summary metrics, excluding rows with missingData=True."""
     clean_df = _exclude_missing_rows(df)
 
-    interval_cost = clean_df["netImbalanceVolume"] * clean_df["systemSellPrice"] 
+    absolute_volume = clean_df["netImbalanceVolume"].abs()
+    interval_cost = absolute_volume * clean_df["systemSellPrice"]
     total_daily_cost = float(interval_cost.sum())
-    total_absolute_volume = float(clean_df["netImbalanceVolume"].abs().sum())
+    total_absolute_volume = float(absolute_volume.sum())
     unit_rate = total_daily_cost / total_absolute_volume if total_absolute_volume else 0.0
 
     summary_rows = [
         {
             "Metric": "Total daily imbalance cost",
             "Value": f"{total_daily_cost:,.2f}",
-            "Methodology": "Calculated on reported (non-missing) periods only: sum(netImbalanceVolume * systemSellPrice).",
+            "Methodology": "Calculated on reported (non-missing) periods only: sum(abs(netImbalanceVolume) * systemSellPrice).",
         },
         {
             "Metric": "Daily imbalance unit rate",

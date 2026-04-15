@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from venv import logger
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -113,6 +114,7 @@ class ImbalanceVisualisation:
         fig.text(0.01, 0.01, note_text, fontsize=8.5, color="#6b1f1f")
 
         image_path = self._save_figure(fig, "combined_volume_price.png")
+        logger.info(f"Saved combined volume-price chart to {image_path}")
         return {
             "title": "Net Imbalance Volume with Price Overlay",
             "description": "Bars show net imbalance volume and the overlaid line shows system price (buy/sell equivalent); missing periods are shaded light red.",
