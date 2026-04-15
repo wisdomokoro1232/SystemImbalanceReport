@@ -110,7 +110,7 @@ python -m pytest
 
 | File | Scope | What it covers |
 |------|-------|----------------|
-| `src/tests/test_unit.py` | Unit (no I/O) | Settlement period mapping, metric calculations, HTML escaping, label logic, input validation |
+| `src/tests/test_unit.py` | Unit (no I/O) | Settlement period mapping, metric calculations, HTML escaping, label logic, api validation |
 | `src/tests/conftest.py` | Fixtures | Shared DataFrames, fake API responses, matplotlib backend override |
 
 ---
