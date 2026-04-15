@@ -110,6 +110,12 @@ class TestGenerateImbalanceSummary:
         cost = float(summary.iloc[0]["Value"].replace(",", ""))
         assert cost == pytest.approx(273_600.0, rel=1e-6)
 
+    def test_unit_rate_calculation(self, clean_df):
+        """Unit rate = total cost / sum(abs(NIV))."""
+        summary = generate_imbalance_summary(clean_df)
+        rate = float(summary.iloc[1]["Value"].replace(",", ""))
+        assert rate == pytest.approx(95.0, rel=1e-6)
+
     def test_missing_rows_are_excluded_from_cost(self, df_with_missing):
         """Imputed zero rows (missingData=True) must not affect the cost total."""
         mask = df_with_missing["missingData"].astype(bool)
