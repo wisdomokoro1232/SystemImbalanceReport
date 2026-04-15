@@ -49,11 +49,11 @@ class APIClient:
             data = response.json()['data']
             if not data:
                 raise ValueError(
-                f"Empty API response: no records returned for settlement date {settlement_date_str}."
+                f"Empty API response: no records returned for settlement date {settlement_date}."
                 )
             else:
                 logger.info(f"Successfully fetched data for settlement date: {settlement_date} with format: {format}")
                 return response
         except requests.RequestException as e:
             logger.error(f"Error fetching data for settlement date: {settlement_date} with format: {format} - {e}")
-            raise SystemExit(e)
+            raise SystemError(f"Error fetching data for settlement date: {settlement_date} with format: {format} - {e}")

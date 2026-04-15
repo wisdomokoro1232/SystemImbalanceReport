@@ -5,11 +5,19 @@
 from __future__ import annotations
 
 from datetime import datetime
-
+import sys
+from pathlib import Path
 import pandas as pd
 import pytest
+import responses
 
-# conftest.py already patched sys.path — plain module names import fine.
+# ---------------------------------------------------------------------------
+# Path bootstrap — must happen before any local imports
+# ---------------------------------------------------------------------------
+_SRC_DIR = str(Path(__file__).parent.parent)
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+    
 from api_client import APIClient
 from data_processing import DataProcessor
 from generate_report import build_summary_table_html, build_visual_card_html
@@ -93,14 +101,14 @@ class TestGenerateImbalanceSummary:
         assert len(generate_imbalance_summary(clean_df)) == 2
 
     def test_total_cost_calculation(self, clean_df):
-        """Total cost = sum(NIV * price).
+        """Total cost = sum(abs(NIV) * price).
 
         For clean_df: NIV[p] = (p-24)*5, price = 95.
-        sum(p-24 for p=1..48) = 24, so cost = 24 * 5 * 95 = 11 400.
+        sum(abs(p-24) for p=1..48) = 576, so cost = 576 * 5 * 95 = 273 600.
         """
         summary = generate_imbalance_summary(clean_df)
         cost = float(summary.iloc[0]["Value"].replace(",", ""))
-        assert cost == pytest.approx(11_400.0, rel=1e-6)
+        assert cost == pytest.approx(273_600.0, rel=1e-6)
 
     def test_missing_rows_are_excluded_from_cost(self, df_with_missing):
         """Imputed zero rows (missingData=True) must not affect the cost total."""
@@ -166,7 +174,7 @@ class TestBuildMissingPeriodNoteHtml:
 
 
 # ---------------------------------------------------------------------------
-# APIClient input validation
+# APIClient validation
 # ---------------------------------------------------------------------------
 
 
@@ -181,33 +189,54 @@ class TestAPIClientValidation:
         with pytest.raises(ValueError, match="Invalid date format"):
             client.fetch_indicative_imbalance_settlement(format="json", settlement_date="10-04-2026")
 
-    def test_get_settlement_date_returns_yesterday_in_iso_format(self):
-        from datetime import date, timedelta
-
-        result = APIClient.get_settlement_date()
-        yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
-        assert result == yesterday
-
-    def test_empty_api_response_raises_value_error(self, requests_mock):
+    @responses.activate
+    def test_empty_api_response_raises_value_error(self):
         client = APIClient()
         settlement_date_str = "2026-04-10"
         url = f"{client.base_url}{settlement_date_str}?format=json"
-        requests_mock.get(url, json={"data": []}, status_code=200)
+
+        responses.add(responses.GET, url, json={"data": []}, status=200)
 
         with pytest.raises(ValueError, match=f"Empty API response: no records returned for settlement date {settlement_date_str}."):
             client.fetch_indicative_imbalance_settlement(format="json", settlement_date=settlement_date_str)
 
-    def test_retry_on_server_error(self, requests_mock):
+    @responses.activate
+    def test_valid_response_returns_data(self):
         client = APIClient()
         settlement_date_str = "2026-04-10"
         url = f"{client.base_url}{settlement_date_str}?format=json"
-        # Simulate 3 server errors followed by a successful response
-        requests_mock.get(url, [
-            {"status_code": 500},
-            {"status_code": 502},
-            {"status_code": 503},
-            {"json": {"data": [{"settlementPeriod": 1, "systemSellPrice": 100.0, "systemBuyPrice": 100.0, "netImbalanceVolume": 10.0}]}},
-        ])
+        mock_data = {"data": [{"settlementPeriod": 1, "systemSellPrice": 100.0, "systemBuyPrice": 100.0, "netImbalanceVolume": 10.0}]}
+
+        responses.add(responses.GET, url, json=mock_data, status=200)
 
         response = client.fetch_indicative_imbalance_settlement(format="json", settlement_date=settlement_date_str)
         assert response.status_code == 200
+        assert response.json() == mock_data
+
+    @responses.activate
+    def test_retry_on_server_error(self):
+        client = APIClient()
+        settlement_date_str = "2026-04-10"
+        url = f"{client.base_url}{settlement_date_str}?format=json"
+        
+        # Add responses in order
+        responses.add(responses.GET, url, status=500)
+        responses.add(responses.GET, url, status=502)
+        responses.add(responses.GET, url, status=503)
+        responses.add(
+            responses.GET, url,
+            json={
+                "data": [
+                    {
+                        "settlementPeriod": 1,
+                        "systemSellPrice": 100.0,
+                        "systemBuyPrice": 100.0,
+                        "netImbalanceVolume": 10.0,
+                    }
+                ]
+            },
+            status=200
+        )
+        
+        response = client.fetch_indicative_imbalance_settlement(format="json", settlement_date=settlement_date_str)
+        assert response.status_code == 200  

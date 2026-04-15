@@ -48,37 +48,9 @@ def period_to_dt_str(period: int, settlement_date: str = SETTLEMENT_DATE) -> str
     return (start + timedelta(minutes=(period - 1) * 30)).strftime("%Y-%m-%d %H:%M")
 
 
-def build_raw_api_records(periods: list[int] | None = None) -> list[dict]:
-    """Return fake API-style record dicts for *periods* (default: 1-48)."""
-    if periods is None:
-        periods = list(range(1, 49))
-    return [
-        {
-            "settlementPeriod": p,
-            "systemSellPrice": PRICE,
-            "systemBuyPrice": PRICE,
-            "netImbalanceVolume": float((p - 24) * 5),
-        }
-        for p in periods
-    ]
-
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
-
-
-@pytest.fixture
-def api_response_full() -> dict:
-    """Full 48-period raw API response dict."""
-    return {"data": build_raw_api_records()}
-
-
-@pytest.fixture
-def api_response_missing_periods() -> dict:
-    """46-period API response — periods 3 and 25 are absent."""
-    return {"data": build_raw_api_records([p for p in range(1, 49) if p not in (3, 25)])}
-
 
 @pytest.fixture
 def clean_df() -> pd.DataFrame:
